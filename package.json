@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-transform-kdu-jsx",
-  "version": "3.4.3-alpha.0",
+  "version": "4.0.1",
   "description": "Babel plugin for Kdu 2.0 JSX",
   "main": "index.js",
   "unpkg": "dist/babel-plugin-transform-kdu-jsx.min.js",
@@ -11,10 +11,10 @@
   ],
   "scripts": {
     "lint": "eslint index.js",
-    "test": "npm run lint && mocha --compilers js:babel-register",
+    "test": "npm run lint && mocha --require @babel/register",
     "dev": "cd example && webpack --watch",
-    "build": "webpack -p index.js dist/babel-plugin-transform-kdu-jsx.min.js --target=web --output-library=babel-plugin-transform-kdu-jsx --output-library-target=umd --module-bind 'js=babel-loader'",
-    "prepublish": "npm run build"
+    "build": "webpack -d",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -35,22 +35,21 @@
     "esutils": "^2.0.2"
   },
   "peerDependencies": {
-    "babel-helper-kdu-jsx-merge-props": "^2.0.0",
-    "babel-plugin-syntax-jsx": "^6.8.0"
+    "babel-helper-kdu-jsx-merge-props": "^2.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.10.1",
-    "babel-helper-kdu-jsx-merge-props": "^2.0.2",
-    "babel-loader": "^6.2.4",
-    "babel-plugin-syntax-jsx": "^6.8.0",
-    "babel-preset-es2015": "^6.9.0",
-    "babel-register": "^6.9.0",
-    "chai": "^3.5.0",
-    "eslint": "^2.12.0",
-    "eslint-config-kdu": "^2.0.0-alpha.1",
-    "eslint-plugin-kdu": "^1.0.0-alpha.1",
-    "mocha": "^2.5.3",
-    "kdu": "^2.0.0-alpha.5.0",
-    "webpack": "^1.13.1"
+    "@babel/core": "^7.0.0-beta.40",
+    "@babel/helper-module-imports": "^7.0.0-beta.40",
+    "@babel/preset-env": "^7.0.0-beta.40",
+    "@babel/register": "^7.0.0-beta.40",
+    "babel-helper-kdu-jsx-merge-props": "^2.0.3",
+    "babel-loader": "8.0.0-beta.0",
+    "@babel/plugin-syntax-jsx": "^7.0.0-beta.40",
+    "chai": "^4.1.2",
+    "eslint": "^4.16.0",
+    "eslint-plugin-kdu-libs": "^2.1.0",
+    "kdu": "^2.5.13-alpha.0",
+    "mocha": "^5.0.0",
+    "webpack": "^3.11.0"
   }
 }

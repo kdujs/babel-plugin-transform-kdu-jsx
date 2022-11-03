@@ -1,11 +1,23 @@
 var esutils = require('esutils')
 var groupProps = require('./lib/group-props')
+var mustUseProp = require('./lib/must-use-prop')
+var addDefault = require('@babel/helper-module-imports').addDefault
+
+var isInsideJsxExpression = function (t, path) {
+  if (!path.parentPath) {
+    return false
+  }
+  if (t.isJSXExpressionContainer(path.parentPath)) {
+    return true
+  }
+  return isInsideJsxExpression(t, path.parentPath)
+}
 
 module.exports = function (babel) {
   var t = babel.types
 
   return {
-    inherits: require('babel-plugin-syntax-jsx'),
+    inherits: require('@babel/plugin-syntax-jsx').default,
     visitor: {
       JSXNamespacedName (path) {
         throw path.buildCodeFrameError(
@@ -17,10 +29,12 @@ module.exports = function (babel) {
         exit (path, file) {
           // turn tag into createElement call
           var callExpr = buildElementCall(path.get('openingElement'), file)
-          // add children array as 3rd arg
-          callExpr.arguments.push(t.arrayExpression(path.node.children))
-          if (callExpr.arguments.length >= 3) {
-            callExpr._prettyCall = true
+          if (path.node.children.length) {
+            // add children array as 3rd arg
+            callExpr.arguments.push(t.arrayExpression(path.node.children))
+            if (callExpr.arguments.length >= 3) {
+              callExpr._prettyCall = true
+            }
           }
           path.replaceWith(t.inherits(callExpr, path.node))
         }
@@ -45,6 +59,10 @@ module.exports = function (babel) {
             if (!jsxChecker.hasJsx) {
               return
             }
+            // do nothing if this method is a part of JSX expression
+            if (isInsideJsxExpression(t, path)) {
+              return
+            }
             const isRender = path.node.key.name === 'render'
             // inject h otherwise
             path.get('body').unshiftContainer('body', t.variableDeclaration('const', [
@@ -64,6 +82,26 @@ module.exports = function (babel) {
                 )
               )
             ]))
+          },
+          JSXOpeningElement (path) {
+            const tag = path.get('name').node.name
+            const attributes = path.get('attributes')
+            const typeAttribute = attributes.find(attributePath => attributePath.node.name && attributePath.node.name.name === 'type')
+            const type = typeAttribute && t.isStringLiteral(typeAttribute.node.value) ? typeAttribute.node.value.value : null
+
+            attributes.forEach(attributePath => {
+              const attribute = attributePath.get('name')
+
+              if (!attribute.node) {
+                return
+              }
+
+              const attr = attribute.node.name
+
+              if (mustUseProp(tag, type, attr) && t.isJSXExpressionContainer(attributePath.node.value)) {
+                attribute.replaceWith(t.JSXIdentifier(`domProps-${attr}`))
+              }
+            })
           }
         })
       }
@@ -90,12 +128,9 @@ module.exports = function (babel) {
 
     var attribs = path.node.attributes
     if (attribs.length) {
-      attribs = buildOpeningElementAttributes(attribs, file)
-    } else {
-      attribs = t.nullLiteral()
+      attribs = buildOpeningElementAttributes(attribs, path)
+      args.push(attribs)
     }
-    args.push(attribs)
-
     return t.callExpression(t.identifier('h'), args)
   }
 
@@ -124,7 +159,7 @@ module.exports = function (babel) {
    * all prior attributes to an array for later processing.
    */
 
-  function buildOpeningElementAttributes (attribs, file) {
+  function buildOpeningElementAttributes (attribs, path) {
     var _props = []
     var objs = []
 
@@ -156,7 +191,7 @@ module.exports = function (babel) {
       attribs = objs[0]
     } else if (objs.length) {
       // add prop merging helper
-      var helper = file.addImport('babel-helper-kdu-jsx-merge-props', 'default', '_mergeJSXProps')
+      var helper = addDefault(path, 'babel-helper-kdu-jsx-merge-props', { nameHint: '_mergeJSXProps' })
       // spread it
       attribs = t.callExpression(
         helper,
