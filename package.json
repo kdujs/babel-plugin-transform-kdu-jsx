@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-transform-kdu-jsx",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Babel plugin for Kdu 2.0 JSX",
   "main": "index.js",
   "unpkg": "dist/babel-plugin-transform-kdu-jsx.min.js",
@@ -48,7 +48,7 @@
     "chai": "^4.1.2",
     "eslint": "^4.16.0",
     "eslint-plugin-kdu-libs": "^2.1.0",
-    "kdu": "^2.5.13-alpha.0",
+    "kdu": "^2.5.24",
     "mocha": "^5.0.0",
     "webpack": "^3.11.0"
   }

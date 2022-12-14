@@ -87,7 +87,7 @@ class App extends Kdu {
 
 ### Difference from React JSX
 
-First, Kdu 2.0's vnode format is different from React's. The second argument to the `createElement` call is a "data object" that accepts nested objects. Each nested object will be then processed by corresponding modules:
+First, Kdu 2.0's knode format is different from React's. The second argument to the `createElement` call is a "data object" that accepts nested objects. Each nested object will be then processed by corresponding modules:
 
 ``` js
 render (h) {
@@ -185,7 +185,7 @@ JSX spread is supported, and this plugin will intelligently merge nested data pr
 const data = {
   class: ['b', 'c']
 }
-const vnode = <div class="a" {...data}/>
+const knode = <div class="a" {...data}/>
 ```
 
 The merged data will be:
@@ -202,7 +202,7 @@ For custom directives, you can use the `k-name={value}` syntax. However, note th
 
 1. Pass everything as an object via `value`, e.g. `k-name={{ value, modifier: true }}`
 
-2. Use the raw vnode directive data format:
+2. Use the raw knode directive data format:
 
 ``` js
 const directives = [
