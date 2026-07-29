@@ -1,4 +1,4 @@
 {
   "root": true,
-  "extends": "kdu"
+  "extends": "plugin:kdu-libs/recommended"
 }

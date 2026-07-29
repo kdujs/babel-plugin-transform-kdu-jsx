@@ -1,3 +1,4 @@
+/* eslint-env node, mocha */
 import { expect } from 'chai'
 import Kdu from 'kdu'
 
@@ -27,6 +28,17 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.data.attrs.id).to.equal('foo')
   })
 
+  it('should omit attribs if possible', () => {
+    const knode = render(h => <div>test</div>)
+    expect(knode.data).to.equal(undefined)
+  })
+
+  it('should omit children argument if possible', () => {
+    const knode = render(h => <div />)
+    const children = knode.children
+    expect(children).to.equal(undefined)
+  })
+
   it('should handle top-level special attrs', () => {
     const knode = render(h => (
       <div
@@ -50,12 +62,14 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     const noop = _ => _
     const knode = render(h => (
       <div
+        props-on-success={noop}
         on-click={noop}
         on-kebab-case={noop}
         domProps-innerHTML="<p>hi</p>"
         hook-insert={noop}>
       </div>
     ))
+    expect(knode.data.props['on-success']).to.equal(noop)
     expect(knode.data.on.click).to.equal(noop)
     expect(knode.data.on['kebab-case']).to.equal(noop)
     expect(knode.data.domProps.innerHTML).to.equal('<p>hi</p>')
@@ -66,12 +80,14 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     const noop = _ => _
     const knode = render(h => (
       <div
+        propsOnSuccess={noop}
         onClick={noop}
         onCamelCase={noop}
         domPropsInnerHTML="<p>hi</p>"
         hookInsert={noop}>
       </div>
     ))
+    expect(knode.data.props.onSuccess).to.equal(noop)
     expect(knode.data.on.click).to.equal(noop)
     expect(knode.data.on.camelCase).to.equal(noop)
     expect(knode.data.domProps.innerHTML).to.equal('<p>hi</p>')
@@ -167,7 +183,7 @@ describe('babel-plugin-transform-kdu-jsx', () => {
 
   it('custom directives', () => {
     const knode = render(h => (
-      <div k-test={ 123 } v-other={ 234 } />
+      <div k-test={ 123 } k-other={ 234 } />
     ))
 
     expect(knode.data.directives.length).to.equal(2)
@@ -191,7 +207,7 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.data.class).to.deep.equal({ a: true, b: true })
   })
 
-  it('h self-defining in object methods', () => {
+  it('h injection in object methods', () => {
     const obj = {
       method () {
         return <div>test</div>
@@ -202,7 +218,24 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.children[0].text).to.equal('test')
   })
 
-  it('h self-defining in object getters', () => {
+  it('h should not be injected in nested JSX expressions', () => {
+    const obj = {
+      method () {
+        return <div foo={{
+          render () {
+            return <div>bar</div>
+          }
+        }}>test</div>
+      }
+    }
+    const knode = render(h => obj.method.call({ $createElement: h }))
+    expect(knode.tag).to.equal('div')
+    const nested = knode.data.attrs.foo.render()
+    expect(nested.tag).to.equal('div')
+    expect(nested.children[0].text).to.equal('bar')
+  })
+
+  it('h injection in object getters', () => {
     const obj = {
       get computed () {
         return <div>test</div>
@@ -216,7 +249,7 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.children[0].text).to.equal('test')
   })
 
-  it('h self-defining in multi-level object getters', () => {
+  it('h injection in multi-level object getters', () => {
     const obj = {
       inherited: {
         get computed () {
@@ -232,7 +265,7 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.children[0].text).to.equal('test')
   })
 
-  it('h self-defining in class methods', () => {
+  it('h injection in class methods', () => {
     class Test {
       constructor (h) {
         this.$createElement = h
@@ -246,7 +279,7 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.children[0].text).to.equal('test')
   })
 
-  it('h self-defining in class getters', () => {
+  it('h injection in class getters', () => {
     class Test {
       constructor (h) {
         this.$createElement = h
@@ -260,7 +293,7 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     expect(knode.children[0].text).to.equal('test')
   })
 
-  it('h self-defining in methods with parameters', () => {
+  it('h injection in methods with parameters', () => {
     class Test {
       constructor (h) {
         this.$createElement = h
@@ -272,6 +305,20 @@ describe('babel-plugin-transform-kdu-jsx', () => {
     const knode = render(h => (new Test(h)).notRender('test'))
     expect(knode.tag).to.equal('div')
     expect(knode.children[0].text).to.equal('test')
+  })
+
+  it('should handle special attrs properties', () => {
+    const knode = render(h => (
+      <input value="value" />
+    ))
+    expect(knode.data.attrs.value).to.equal('value')
+  })
+
+  it('should handle special domProps properties', () => {
+    const knode = render(h => (
+      <input value={'some jsx expression'} />
+    ))
+    expect(knode.data.domProps.value).to.equal('some jsx expression')
   })
 })
 
